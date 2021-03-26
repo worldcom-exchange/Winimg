@@ -1,19 +1,74 @@
----
-- name: Build Image
-  hosts: hyperv-build
+- name: Create autounattend Win2019 iso
+  hosts: win
   gather_facts: no
-  vars:
-    HostConfig: true
-    convert: true 
   vars_files:
     - vars/global_vars.yml
-  roles:
-    - role: prepare-host
-    - role: windows-iso
-    - role: prepare-build
-    - role: build-image
-    - role: convert-build
-      when: convert == true
-#    - role: upload-image
-      
-    
+  tasks:
+    - name: Check Config
+      win_shell: |
+        $config = @{}
+        foreach ($path in $env:Path) { if ($path -like "*git*") {$config.Add("Git", $True)}else {$config.Add("Git", $False)} }
+        $config | ConvertTo-Json
+      register: config
+
+    - name: fact
+      set_fact:
+        config: "{{ config.stdout | from_json }}"
+
+    - name: Download git-client
+      win_get_url:
+        url: https://github.com/git-for-windows/git/releases/download/v2.20.1.windows.1/Git-2.20.1-64-bit.exe
+        dest: C:\Windows\Temp
+      when: config.Git == False
+    - name: install git-client
+      raw: 'C:\Windows\Temp\Git-2.20.1-64-bit.exe /SILENT /COMPONENTS="icons,ext\reg\shellhere,assoc,assoc_sh"'
+      when: config.Git == False
+
+    - name: Set Winrm to trust all hosts
+      win_shell: winrm s winrm/config/client '@{TrustedHosts="*"}'
+
+    - name: Clone Git Repo
+      win_shell: git clone {{GitRepo}} {{GitRepoPath}}
+
+    - name: Set os_selection fact
+      set_fact:
+        os_selection: "{{os_version}}{{os_edition}}"
+
+    - name: Clean build path
+      win_file:
+        path: "{{GitRepoPath}}\\build\\{{os_selection}}"
+        state: absent
+
+    - name: Create build folder
+      win_file:
+        path: "{{GitRepoPath}}\\build\\{{os_selection}}"
+        state: directory
+
+    - name: Mount iso
+      win_disk_image:
+        image_path: C:\ISO\win2019.iso
+        state: present
+      register: disk_image_out
+
+    - name: Create Autounattend from template
+      win_template:
+        src: templates/Autounattend.xml.j2
+        dest: C:\Temp\Autounattend
+
+    - name: Create cloudbase-init.conf from template
+      win_template:
+        src: templates/cloudbase-init.conf.j2
+        dest: C:\Temp\cloudbase-init.conf
+
+    - name: Copy bootstrap script
+      win_copy:
+        src: scripts/setup/bootstrap.ps1
+        dest: "{{disk_image_out.mount_paths[0]}}bootstrap.ps1"
+
+    - name: Copy templated files
+      win_copy:
+        src: C:\Temp
+        dest: "{{disk_image_out.mount_paths[0]}}" 
+
+    - name: Create secondary iso
+      win_shell: "{{GitRepoPath}}\\bin\\uefi_iso {{disk_image_out.mount_paths[0]}} {{GitRepoPath}}\\build\\{{os_selection}}\\secondary.iso"

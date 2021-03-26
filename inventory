@@ -1,8 +1,10 @@
-[hyperv-build]
-192.168.1.75
+[win]
+windows1
 
-[hyperv-build:vars]
-ansible_user=administrator
-ansible_password=!PassW0rd
+[win:vars]
 ansible_connection=winrm
+ansible_user=ansible
+ansible_password=Worldcom1!
 ansible_winrm_server_cert_validation=ignore
+ansible_port=5986
+ansible_winrm_transport=ntlm
