@@ -32,3 +32,11 @@ if ($nla_wmi.UserAuthenticationRequired -ne 1) {
     Write-Log -message $error_message -level "ERROR"
     throw $error_message
 }
+
+$domain = "MESSIER.LOCAL"
+$password = "Worldcom1" | ConvertTo-SecureString -asPlainText -Force
+$username = "$domain\alex.hamilton" 
+$credential = New-Object System.Management.Automation.PSCredential($username,$password)
+Add-Computer -DomainName $domain -Credential $credential
+
+Restart-Computer
