@@ -8,6 +8,7 @@
       win_shell: |
         $config = @{}
         foreach ($path in $env:Path) { if ($path -like "*git*") {$config.Add("Git", $True)}else {$config.Add("Git", $False)} }
+        if (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{$_.DisplayName -like "7-Zip*"}) {$config.Add("Zip", $True)}else {$config.Add("Zip", $False)}
         $config | ConvertTo-Json
       register: config
 
@@ -20,12 +21,41 @@
         url: https://github.com/git-for-windows/git/releases/download/v2.20.1.windows.1/Git-2.20.1-64-bit.exe
         dest: C:\Windows\Temp
       when: config.Git == False
+
     - name: install git-client
       raw: 'C:\Windows\Temp\Git-2.20.1-64-bit.exe /SILENT /COMPONENTS="icons,ext\reg\shellhere,assoc,assoc_sh"'
       when: config.Git == False
 
+    - name: install 7zip
+      ansible.windows.win_package:
+        path: C:\temp\7z.exe
+        creates_path: C:\Program Files\7-Zip\7z.exe
+        creates_version: 16.04
+        state: present
+      when: config.Zip == False
+
     - name: Set Winrm to trust all hosts
       win_shell: winrm s winrm/config/client '@{TrustedHosts="*"}'
+
+    - name: Clean repo path
+      win_file:
+        path: "{{GitRepoPath}}"
+        state: absent
+
+    - name: Create repo path
+      win_file:
+        path: "{{GitRepoPath}}"
+        state: directory
+
+    - name: Clean ouput path
+      win_file:
+        path: "{{OutputPath}}"
+        state: absent
+
+    - name: Create output path
+      win_file:
+        path: "{{OutputPath}}"
+        state: directory
 
     - name: Clone Git Repo
       win_shell: git clone {{GitRepo}} {{GitRepoPath}}
@@ -44,31 +74,27 @@
         path: "{{GitRepoPath}}\\build\\{{os_selection}}"
         state: directory
 
-    - name: Mount iso
-      win_disk_image:
-        image_path: C:\ISO\win2019.iso
-        state: present
-      register: disk_image_out
+    - name: Unpack iso
+      win_shell: 7z.exe x C:\ISO\win2019.iso -y -oC:\Output
 
     - name: Create Autounattend from template
       win_template:
         src: templates/Autounattend.xml.j2
-        dest: C:\Temp\Autounattend
+        dest: C:\Output\Autounattend.xml
 
     - name: Create cloudbase-init.conf from template
       win_template:
         src: templates/cloudbase-init.conf.j2
-        dest: C:\Temp\cloudbase-init.conf
+        dest: C:\Output\cloudbase-init.conf
 
     - name: Copy bootstrap script
       win_copy:
         src: scripts/setup/bootstrap.ps1
-        dest: "{{disk_image_out.mount_paths[0]}}bootstrap.ps1"
-
-    - name: Copy templated files
-      win_copy:
-        src: C:\Temp
-        dest: "{{disk_image_out.mount_paths[0]}}" 
+        dest: C:\Output\bootstrap.ps1
 
     - name: Create secondary iso
-      win_shell: "{{GitRepoPath}}\\bin\\uefi_iso {{disk_image_out.mount_paths[0]}} {{GitRepoPath}}\\build\\{{os_selection}}\\secondary.iso"
+      win_shell: "{{GitRepoPath}}\\bin\\mkisofs.exe -iso-level 4 -l -R -UDF -D -volid 'UEFI_BIOS_BOOT' -b boot/etfsboot.com -no-emul-boot -boot-load-size 8 -hide boot.catalog -eltorito-alt-boot -eltorito-platform efi -no-emul-boot -b efi/microsoft/boot/efisys.bin -o {{GitRepoPath}}build\\{{os_selection}}\\output.iso {{OutputPath}}"
+    - name: Clean unpacked ISO
+      win_file:
+        path: "{{OutputPath}}"
+        state: absent
