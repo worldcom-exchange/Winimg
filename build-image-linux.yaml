@@ -1,0 +1,74 @@
+- name: Create autounattend Win2019 iso
+  connection: local
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - vars/linux_build_vars.yml
+  tasks:
+    - name: Clean repo path
+      win_file:
+        path: "{{git_repo_path}}"
+        state: absent
+
+    - name: Create repo path
+      win_file:
+        path: "{{git_repo_path}}"
+        state: directory
+
+    - name: Clean ouput path
+      win_file:
+        path: "{{extract_path}}"
+        state: absent
+
+    - name: Create output path
+      win_file:
+        path: "{{extract_path}}"
+        state: directory
+
+    - name: Clone Git Repo
+      command: git clone {{GitRepo}} {{git_repo_path}}
+
+    - name: Set os_selection fact
+      set_fact:
+        os_selection: "{{os_version}}{{os_edition}}"
+
+    - name: Clean build path
+      file:
+        path: "{{git_repo_path}}/build/{{os_selection}}"
+        state: absent
+
+    - name: Create build folder
+      file:
+        path: "{{git_repo_path}}/build/{{os_selection}}"
+        state: directory
+
+    - name: Loopback mount ISO
+      command: "mount -o loop {{base_iso_path}} {{iso_mnt_point}}" 
+
+    - name: Copy all ISO contents to {{extract_path}}
+      copy: 
+        src: "{{iso_mnt_point}}"
+        dest: "{{extract_path}}"
+
+    - name: Create Autounattend from template
+      template:
+        src: templates/Autounattend.xml.j2
+        dest: "{{extract_path}}/Autounattend.xml"
+
+    - name: Create cloudbase-init.conf from template
+      template:
+        src: templates/cloudbase-init.conf.j2
+        dest: "{{extract_path}}/cloudbase-init.conf"
+
+    - name: Copy bootstrap script
+      copy:
+        src: scripts/setup/bootstrap.ps1
+        dest: "{{extract_path}}/bootstrap.ps1"
+
+    - name: Create secondary iso
+      command: "mkisofs -iso-level 4 -l -R -UDF -D -volid 'UEFI_BIOS_BOOT' -b boot/etfsboot.com -no-emul-boot -boot-load-size 8 -hide boot.catalog -eltorito-alt-boot -eltorito-platform efi -no-emul-boot -b efi/microsoft/boot/efisys.bin -o {{git_repo_path}}/build/{{os_selection}}/output.iso {{extract_path}}"
+
+    - name: Clean unpacked ISO
+      file:
+        path: "{{extract_path}}"
+        state: absent

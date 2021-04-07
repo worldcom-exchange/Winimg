@@ -1,0 +1,41 @@
+git_repo_url: https://github.com/worldcom-exchange/Winimg.git
+git_repo_path: /home/ansible/iso_builder
+base_iso_path: /home/ansible/windows_isos/win_2019.iso
+extract_path: /home/ansible/extracted_iso
+iso_mnt_point: /mnt/iso
+
+AdministratorPassword: "PassW0rd"
+
+autounattend_setup:
+  win2012r2std:
+    product_key: "D2N9P-3P6X9-2R39C-7RTCD-MDVJX"
+    image_index: 2
+  win2012r2dc:
+    product_key: "W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9"
+    image_index: 4
+  win2016std:
+    product_key: "WC2BQ-8NRM3-FDDYY-2BFGV-KHKQY"
+    image_index: 2
+  win2016dc:
+    product_key: "CB7KF-BWN84-R7R2Y-793K2-8XDDG"
+    image_index: 4
+  win2019std:
+    product_key: "N69G4-B89J2-4G8F4-WWYCC-J464C"
+    image_index: 2
+  win2019dc:
+    product_key: "WMDGN-G9PQG-XVVXX-R3X43-63DFG"
+    image_index: 4
+  
+Cloudbase_PluginsList: cloudbaseinit.plugins.common.mtu.MTUPlugin,
+        cloudbaseinit.plugins.windows.ntpclient.NTPClientPlugin,
+        cloudbaseinit.plugins.common.sethostname.SetHostNamePlugin,
+        cloudbaseinit.plugins.windows.createuser.CreateUserPlugin,
+        cloudbaseinit.plugins.common.networkconfig.NetworkConfigPlugin,
+        cloudbaseinit.plugins.windows.licensing.WindowsLicensingPlugin,
+        cloudbaseinit.plugins.common.sshpublickeys.SetUserSSHPublicKeysPlugin,
+        cloudbaseinit.plugins.windows.extendvolumes.ExtendVolumesPlugin,
+        cloudbaseinit.plugins.common.setuserpassword.SetUserPasswordPlugin,
+        cloudbaseinit.plugins.common.userdata.UserDataPlugin,
+        cloudbaseinit.plugins.windows.winrmlistener.ConfigWinRMListenerPlugin,
+        cloudbaseinit.plugins.windows.winrmcertificateauth.ConfigWinRMCertificateAuthPlugin,
+        cloudbaseinit.plugins.common.localscripts.LocalScriptsPlugin
