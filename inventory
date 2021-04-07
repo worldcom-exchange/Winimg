@@ -3,8 +3,12 @@ windows1
 
 [win:vars]
 ansible_connection=winrm
-ansible_user=ansible
-ansible_password=Worldcom1!
-ansible_winrm_server_cert_validation=ignore
+ansible_user=alex.hamilton@MESSIER.LOCAL
+ansible_password=Worldcom1
 ansible_port=5986
 ansible_winrm_transport=ntlm
+ansible_winrm_scheme=https
+#ansible_kinit_mode=managed
+#ansible_kinit_cmd=/usr/bin/kinit
+#ansible_winrm_ca_trust_path=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+ansible_winrm_server_cert_validation=ignore

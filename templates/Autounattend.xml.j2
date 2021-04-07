@@ -14,26 +14,36 @@
         <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <DiskConfiguration>
                 <Disk wcm:action="add">
-                    <CreatePartitions>
-                        <CreatePartition wcm:action="add">
+		    <CreatePartitions>
+			<CreatePartition wcm:action="add">
                             <Order>1</Order>
                             <Size>300</Size>
                             <Type>Primary</Type>
-                        </CreatePartition>
+                        </CreatePartition>	
                         <CreatePartition wcm:action="add">
                             <Order>2</Order>
+			    <Size>{{ part_size[0] }}</Size>
+                            <Type>Primary</Type>
+		        </CreatePartition>
+			<CreatePartition wcm:action="add">
+			    <Order>3</Order>
+			    <Size>{{ part_size[1] }}</Size>
+			    <Type>Primary</Type>
+		        </CreatePartition>
+			<CreatePartition wcm:action="add">
+		            <Order>4</Order>
+		            <Size>{{ part_size[2] }}</Size>
+			    <Type>Primary</Type>
+	                </CreatePartition>			
+                        <CreatePartition wcm:action="add">
+                            <Order>5</Order>
                             <Size>100</Size>
                             <Type>EFI</Type>
                         </CreatePartition>
                         <CreatePartition wcm:action="add">
-                            <Order>3</Order>
+                            <Order>6</Order>
                             <Size>128</Size>
                             <Type>MSR</Type>
-                        </CreatePartition>
-                        <CreatePartition wcm:action="add">
-                            <Order>4</Order>
-                            <Extend>true</Extend>
-                            <Type>Primary</Type>
                         </CreatePartition>
                     </CreatePartitions>
                     <ModifyPartitions>
@@ -42,23 +52,38 @@
                             <PartitionID>1</PartitionID>
                             <Label>WINRE</Label>
                             <Format>NTFS</Format>
-                            <TypeID>de94bba4-06d1-4d40-a16a-bfd50179d6ac</TypeID>
-                        </ModifyPartition>
+			    <TypeID>de94bba4-06d1-4d40-a16a-bfd50179d6ac</TypeID>
+			</ModifyPartition>
                         <ModifyPartition wcm:action="add">
                             <Order>2</Order>
                             <PartitionID>2</PartitionID>
-                            <Label>System</Label>
-                            <Format>FAT32</Format>
+                            <Label>Windows</Label>
+			    <Format>NTFS</Format>
+			    <Letter>C</Letter>
                         </ModifyPartition>
-                        <ModifyPartition wcm:action="add">
+		        <ModifyPartition wcm:action="add">
                             <Order>3</Order>
                             <PartitionID>3</PartitionID>
+                            <Label>Secondary1</Label>
+			    <Format>NTFS</Format>
+			    <Letter>D</Letter>
                         </ModifyPartition>
                         <ModifyPartition wcm:action="add">
                             <Order>4</Order>
                             <PartitionID>4</PartitionID>
-                            <Label>Windows</Label>
-                            <Format>NTFS</Format>
+                            <Label>Secondary2</Label>
+			    <Format>NTFS</Format>
+			    <Letter>E</Letter>
+                        </ModifyPartition>
+                        <ModifyPartition wcm:action="add">
+                            <Order>5</Order>
+                            <PartitionID>5</PartitionID>
+                            <Label>System</Label>
+                            <Format>FAT32</Format>
+                        </ModifyPartition>
+                        <ModifyPartition wcm:action="add">
+                            <Order>6</Order>
+                            <PartitionID>6</PartitionID>
                         </ModifyPartition>
                     </ModifyPartitions>
                     <DiskID>0</DiskID>
@@ -76,7 +101,7 @@
                     </InstallFrom>
                     <InstallTo>
                         <DiskID>0</DiskID>
-                        <PartitionID>4</PartitionID>
+			<PartitionID>2</PartitionID>
                     </InstallTo>
                 </OSImage>
             </ImageInstall>
@@ -113,6 +138,41 @@
         <component name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <SkipAutoActivation>true</SkipAutoActivation>
         </component>
+            <component name="Microsoft-Windows-TCPIP" processorArchitecture="x86" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <Interfaces>
+                <Interface wcm:action="add">
+                    <Ipv4Settings>
+                        <DhcpEnabled>false</DhcpEnabled>
+		    </Ipv4Settings>
+                    <Identifier>Local Area Network</Identifier>
+                    <UnicastIpAddresses>
+                            <IpAddress wcm:action="add" wcm:keyValue="1">{{ ip_addr }}</IpAddress>
+                    </UnicastIpAddresses>
+                    <Routes>
+                        <Route wcm:action="add">
+                            <Identifier>0</Identifier>
+                            <Prefix>0.0.0.0/0</Prefix>
+                            <NextHopAddress>{{ gateway }}</NextHopAddress>
+                            <Metric>20</Metric>
+                        </Route>
+                    </Routes>
+                </Interface>
+            </Interfaces>
+        </component>
+        <component name="Microsoft-Windows-DNS-Client" processorArchitecture="x86" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <Interfaces>
+                <Interface wcm:action="add">
+                  <DNSServerSearchOrder>
+                          <IpAddress wcm:action="add" wcm:keyValue="1">{{ dns1 }}</IpAddress>
+                          <IpAddress wcm:action="add" wcm:keyValue="2">{{ dns2 }}</IpAddress>
+                  </DNSServerSearchOrder>
+                  <DisableDynamicUpdate>false</DisableDynamicUpdate>
+                  <DNSDomain>{{ domain }}</DNSDomain>
+		  <Identifier>Local Area Network</Identifier>
+                  <EnableAdapterDomainNameRegistration>true</EnableAdapterDomainNameRegistration>
+              </Interface>
+          </Interfaces>
+      </component>
     </settings>
     <settings pass="oobeSystem">
 <!-- Start Setup cache proxy during installation

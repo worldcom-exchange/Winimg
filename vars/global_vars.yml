@@ -5,6 +5,19 @@ OutputPath: c:\output
 
 AdministratorPassword: "PassW0rd"
 
+part_size:
+  - 262144
+  - 5000
+  - 5000
+
+ip_addr: 192.168.85.150
+mask: 24
+gateway: 192.168.85.1 
+dns1: 10.6.128.253
+dns2: 192.168.85.1
+domain: messier.local
+identifier: Ethernet0
+
 autounattend_setup:
   win2012r2std:
     product_key: "D2N9P-3P6X9-2R39C-7RTCD-MDVJX"
